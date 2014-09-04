@@ -1,12 +1,12 @@
 {
-  "name": "react",
-  "description": "React is a JavaScript library for building user interfaces.",
+  "name": "react-ie",
+  "description": "React.JS with IE6/IE7 support. React is a JavaScript library for building user interfaces.",
   "version": "0.11.1",
   "keywords": [
     "react"
   ],
-  "homepage": "https://github.com/facebook/react/tree/master/npm-react",
-  "bugs": "https://github.com/facebook/react/issues?labels=react-core",
+  "homepage": "https://github.com/mtsyganov/react/tree/0.11-stable/npm-react",
+  "bugs": "https://github.com/mtsyganov/react/issues?labels=react-core",
   "licenses": [
     {
       "type": "Apache-2.0",
@@ -23,7 +23,7 @@
   "main": "react.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/react"
+    "url": "https://github.com/mtsyganov/react"
   },
   "engines": {
     "node": ">=0.10.0"
