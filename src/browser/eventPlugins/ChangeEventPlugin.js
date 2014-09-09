@@ -205,7 +205,9 @@ function stopWatchingForValueChange() {
   }
 
   // delete restores the original property definition
-  delete activeElement.value;
+  try {
+    delete activeElement.value;
+  } catch(err) {}
   activeElement.detachEvent('onpropertychange', handlePropertyChange);
 
   // IE6/IE7 shim

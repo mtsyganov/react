@@ -114,8 +114,8 @@ var Danger = {
       for (i = 0; i < renderNodes.length; ++i) {
         var renderNode = renderNodes[i];
         if (renderNode.hasAttribute &&
-            renderNode.hasAttribute(RESULT_INDEX_ATTR)
-            || typeof renderNode[RESULT_INDEX_ATTR] !== 'undefined') {
+            renderNode.hasAttribute(RESULT_INDEX_ATTR) ||
+            typeof renderNode[RESULT_INDEX_ATTR] !== 'undefined') {
 
           resultIndex = +renderNode.getAttribute(RESULT_INDEX_ATTR);
           renderNode.removeAttribute(RESULT_INDEX_ATTR);
