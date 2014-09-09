@@ -18,4 +18,5 @@ var React = require('react');
 var React = require('react/addons');
 ```
 
-To run React.JS apps with IE6/IE7 you have to use es5-shims and console-polyfill
+To run React.JS apps with IE6/IE7 you have to use es5-shims, console-polyfill
+and queryselector-polyfill from bower.
