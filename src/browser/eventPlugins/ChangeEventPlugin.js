@@ -57,6 +57,7 @@ var activeElement = null;
 var activeElementID = null;
 var activeElementValue = null;
 var activeElementValueProp = null;
+var activeElementEventTime = null;
 
 /**
  * SECTION: handle `change` event
@@ -177,12 +178,20 @@ function startWatchingForValueChange(target, targetID) {
   activeElement = target;
   activeElementID = targetID;
   activeElementValue = target.value;
-  activeElementValueProp = Object.getOwnPropertyDescriptor(
-    target.constructor.prototype,
-    'value'
-  );
 
-  Object.defineProperty(activeElement, 'value', newValueProp);
+  if (typeof target['constructor'] !== 'undefined') {
+    activeElementValueProp = Object.getOwnPropertyDescriptor(
+      target.constructor.prototype,
+      'value'
+    );
+    Object.defineProperty(activeElement, 'value', newValueProp);
+  } else {
+    // IE6/IE7 shim
+    activeElement.attachEvent('onmouseup', handleUserInput);
+    activeElement.attachEvent('onkeypress', handleUserInput);
+    activeElement.attachEvent('oncut', handleUserInput);
+    activeElement.attachEvent('onpaste', handleUserInput);
+  }  
   activeElement.attachEvent('onpropertychange', handlePropertyChange);
 }
 
@@ -199,10 +208,26 @@ function stopWatchingForValueChange() {
   delete activeElement.value;
   activeElement.detachEvent('onpropertychange', handlePropertyChange);
 
+  // IE6/IE7 shim
+  if (typeof activeElement['constructor'] === 'undefined') {
+    activeElement.detachEvent('onmouseup', handleUserInput);
+    activeElement.detachEvent('onkeypress', handleUserInput);
+    activeElement.detachEvent('oncut', handleUserInput);
+    activeElement.detachEvent('onpaste', handleUserInput);
+  }
+
   activeElement = null;
   activeElementID = null;
   activeElementValue = null;
   activeElementValueProp = null;
+}
+
+/**
+ * IE6/IE7 shim: save datetime of user input to distinguish value change made
+ * from JS and value change made by user input by time diff
+ */
+function handleUserInput(nativeEvent) {
+  activeElementEventTime = new Date();
 }
 
 /**
@@ -219,7 +244,16 @@ function handlePropertyChange(nativeEvent) {
   }
   activeElementValue = value;
 
-  manualDispatchChangeEvent(nativeEvent);
+  if (typeof activeElement['constructor'] !== 'undefined') {
+    manualDispatchChangeEvent(nativeEvent);
+  } else if (activeElementEventTime) {
+    // IE6/IE7 shim
+    var timediff = new Date() - activeElementEventTime;
+    activeElementEventTime = null;
+    if (timediff < 100) {
+      manualDispatchChangeEvent(nativeEvent);
+    }
+  }
 }
 
 /**
