@@ -1,7 +1,7 @@
 {
   "name": "react-ie",
   "description": "React.JS with IE6/IE7 support. React is a JavaScript library for building user interfaces.",
-  "version": "0.11.2",
+  "version": "0.11.5",
   "keywords": [
     "react"
   ],
