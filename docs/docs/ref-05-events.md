@@ -17,14 +17,14 @@ boolean bubbles
 boolean cancelable
 DOMEventTarget currentTarget
 boolean defaultPrevented
-Number eventPhase
+number eventPhase
 boolean isTrusted
 DOMEvent nativeEvent
 void preventDefault()
 void stopPropagation()
 DOMEventTarget target
-Date timeStamp
-String type
+number timeStamp
+string type
 ```
 
 > Note:
@@ -35,7 +35,9 @@ String type
 ## Supported Events
 
 React normalizes events so that they have consistent properties across
-different browsers.
+different browsers. 
+
+The event handlers below are triggered by an event in the bubbling phase. To register an event handler for the capture phase, append `Capture` to the event name; for example, instead of using `onClick`, you would use `onClickCapture` to handle the click event in the capture phase.
 
 
 ### Clipboard Events

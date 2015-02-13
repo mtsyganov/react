@@ -2,7 +2,7 @@
 id: videos
 title: Videos
 permalink: videos.html
-prev: thinking-in-react.html
+prev: conferences.html
 next: complementary-tools.html
 ---
 
@@ -96,6 +96,11 @@ A [tagtree.tv](http://tagtree.tv/) video conveying the principles of [Thinking i
 
 By [Tom Occhino](http://tomocchino.com/) and [Jordan Walke](https://github.com/jordwalke)
 
+### Backbone + React + Middleman Screencast
+<iframe width="650" height="315" src="//www.youtube.com/embed/iul1fWHVU6A" frameborder="0" allowfullscreen></iframe>
+
+Backbone is a great way in interface a REST API with React. This screencast shows how to integate the two using [Backbone-React-Component](https://github.com/magalhas/backbone-react-component). Middleman is the framework used in this example but could easily be replaced with other frameworks. A supported template of this can be found [here](https://github.com/jbhatab/middleman-backbone-react-template). -- [Open Minded Innovations](http://www.openmindedinnovations.com/)
+
 ### Developing User Interfaces With React - Super VanJS
 
 <iframe width="650" height="315" src="//www.youtube.com/embed/1OeXsL5mr4g" frameborder="0" allowfullscreen></iframe>
@@ -127,3 +132,17 @@ by [Stoyan Stefanov](http://www.phpied.com/)
 <iframe width="650" height="315" src="//www.youtube.com/embed/i__969noyAM" frameborder="0" allowfullscreen></iframe>
 
 Facebook engineers [Bill Fisher](http://twitter.com/fisherwebdev) and [Jing Chen](http://twitter.com/jingc) talk about Flux and React, and how using an application architecture with a unidirectional data flow cleans up a lot of their code.
+
+### Server-Side Rendering of Isomorphic Apps at SoundCloud
+
+<iframe src="//player.vimeo.com/video/108488724" width="500" height="281" frameborder="0" allowfullscreen></iframe>
+
+Walk-through by [Andres Suarez](https://github.com/zertosh) on how [SoundCloud](https://developers.soundcloud.com/blog/) is using React and Flux for server-side rendering.
+
+[Slides and sample code](https://github.com/zertosh/ssr-demo-kit)
+
+### Introducing React Native (+Playlist) - React.js Conf 2015
+
+<iframe width="650" height="315" src="//www.youtube.com/watch?v=KVZ-P-ZI6W4&index=1&list=PLb0IAmt7-GS1cbw4qonlQztYV1TAW0sCr" frameborder="0" allowfullscreen></iframe>
+
+[Tom Occhino](https://twitter.com/tomocchino) reviews the past and present of React in 2015, and teases where it's going next.

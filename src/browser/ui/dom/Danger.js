@@ -1,17 +1,10 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule Danger
  * @typechecks static-only
@@ -19,7 +12,7 @@
 
 /*jslint evil: true, sub: true */
 
-"use strict";
+'use strict';
 
 var ExecutionEnvironment = require('ExecutionEnvironment');
 
@@ -63,7 +56,7 @@ var Danger = {
       'dangerouslyRenderMarkup(...): Cannot render markup in a worker ' +
       'thread. Make sure `window` and `document` are available globally ' +
       'before requiring React when unit testing or use ' +
-      'React.renderComponentToString for server rendering.'
+      'React.renderToString for server rendering.'
     );
     var nodeName;
     var markupByNodeName = {};
@@ -89,7 +82,8 @@ var Danger = {
       // This for-in loop skips the holes of the sparse array. The order of
       // iteration should follow the order of assignment, which happens to match
       // numerical index order, but we don't rely on that.
-      for (var resultIndex in markupListByNodeName) {
+      var resultIndex;
+      for (resultIndex in markupListByNodeName) {
         if (markupListByNodeName.hasOwnProperty(resultIndex)) {
           var markup = markupListByNodeName[resultIndex];
 
@@ -112,8 +106,8 @@ var Danger = {
 
       // IE7 fix: hasAttribute isn't available
       // using typeof renderNode[RESULT_INDEX_ATTR] instead
-      for (i = 0; i < renderNodes.length; ++i) {
-        var renderNode = renderNodes[i];
+      for (var j = 0; j < renderNodes.length; ++j) {
+        var renderNode = renderNodes[j];
         if (renderNode.hasAttribute &&
             renderNode.hasAttribute(RESULT_INDEX_ATTR) ||
             typeof renderNode[RESULT_INDEX_ATTR] !== 'undefined') {
@@ -134,7 +128,7 @@ var Danger = {
 
         } else if (__DEV__) {
           console.error(
-            "Danger: Discarding unexpected node:",
+            'Danger: Discarding unexpected node:',
             renderNode
           );
         }
@@ -172,7 +166,7 @@ var Danger = {
       'dangerouslyReplaceNodeWithMarkup(...): Cannot render markup in a ' +
       'worker thread. Make sure `window` and `document` are available ' +
       'globally before requiring React when unit testing or use ' +
-      'React.renderComponentToString for server rendering.'
+      'React.renderToString for server rendering.'
     );
     invariant(markup, 'dangerouslyReplaceNodeWithMarkup(...): Missing markup.');
     invariant(
@@ -180,7 +174,7 @@ var Danger = {
       'dangerouslyReplaceNodeWithMarkup(...): Cannot replace markup of the ' +
       '<html> node. This is because browser quirks make this unreliable ' +
       'and/or slow. If you want to render to the root you must use ' +
-      'server rendering. See renderComponentToString().'
+      'server rendering. See React.renderToString().'
     );
 
     var newChild = createNodesFromMarkup(markup, emptyFunction)[0];

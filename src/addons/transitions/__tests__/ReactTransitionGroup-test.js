@@ -1,23 +1,15 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @jsx React.DOM
  * @emails react-core
  */
 
-"use strict";
+'use strict';
 
 var React;
 var ReactTransitionGroup;
@@ -43,6 +35,13 @@ describe('ReactTransitionGroup', function() {
     var Child = React.createClass({
       componentDidMount: function() {
         log.push('didMount');
+      },
+      componentWillAppear: function(cb) {
+        log.push('willAppear');
+        cb();
+      },
+      componentDidAppear: function() {
+        log.push('didAppear');
       },
       componentWillEnter: function(cb) {
         log.push('willEnter');
@@ -79,16 +78,16 @@ describe('ReactTransitionGroup', function() {
       }
     });
 
-    var instance = React.renderComponent(<Component />, container);
-    expect(log).toEqual(['didMount']);
+    var instance = React.render(<Component />, container);
+    expect(log).toEqual(['didMount', 'willAppear', 'didAppear']);
 
+    log = [];
     instance.setState({count: 2}, function() {
-      expect(log).toEqual(['didMount', 'didMount', 'willEnter', 'didEnter']);
+      expect(log).toEqual(['didMount', 'willEnter', 'didEnter']);
+
+      log = [];
       instance.setState({count: 1}, function() {
-        expect(log).toEqual([
-          "didMount", "didMount", "willEnter", "didEnter",
-          "willLeave", "didLeave", "willUnmount"
-        ]);
+        expect(log).toEqual(['willLeave', 'didLeave', 'willUnmount']);
       });
     });
   });
@@ -136,7 +135,7 @@ describe('ReactTransitionGroup', function() {
       }
     });
 
-    var instance = React.renderComponent(<Component />, container);
+    var instance = React.render(<Component />, container);
     expect(log).toEqual(['didMount']);
     instance.setState({count: 2});
     expect(log).toEqual(['didMount', 'didMount', 'willEnter']);
@@ -195,7 +194,7 @@ describe('ReactTransitionGroup', function() {
       }
     });
 
-    var instance = React.renderComponent(<Component />, container);
+    var instance = React.render(<Component />, container);
     expect(log).toEqual(['didMount']);
     instance.setState({count: 2});
     expect(log).toEqual(['didMount', 'didMount', 'willEnter']);

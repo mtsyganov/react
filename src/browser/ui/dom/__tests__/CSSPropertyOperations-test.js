@@ -1,25 +1,17 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @jsx React.DOM
  * @emails react-core
  */
 
 /*jslint evil: true */
 
-"use strict";
+'use strict';
 
 var React = require('React');
 
@@ -101,7 +93,7 @@ describe('CSSPropertyOperations', function() {
     };
     var div = <div style={styles} />;
     var root = document.createElement('div');
-    div = React.renderComponent(div, root);
+    div = React.render(div, root);
     expect(/style=".*"/.test(root.innerHTML)).toBe(true);
   });
 
@@ -112,7 +104,7 @@ describe('CSSPropertyOperations', function() {
     };
     var div = <div style={styles} />;
     var root = document.createElement('div');
-    React.renderComponent(div, root);
+    React.render(div, root);
     expect(/style=".*"/.test(root.innerHTML)).toBe(false);
   });
 
@@ -136,12 +128,43 @@ describe('CSSPropertyOperations', function() {
       '-webkit-transform': 'translate3d(0, 0, 0)'
     };
 
-    React.renderComponent(<div />, root);
-    React.renderComponent(<div style={styles} />, root);
+    React.render(<div />, root);
+    React.render(<div style={styles} />, root);
 
     expect(console.warn.argsForCall.length).toBe(2);
     expect(console.warn.argsForCall[0][0]).toContain('msTransform');
     expect(console.warn.argsForCall[1][0]).toContain('WebkitTransform');
   });
 
+  it('warns when miscapitalizing vendored style names', function() {
+    spyOn(console, 'warn');
+
+    CSSPropertyOperations.createMarkupForStyles({
+      msTransform: 'translate3d(0, 0, 0)',
+      oTransform: 'translate3d(0, 0, 0)',
+      webkitTransform: 'translate3d(0, 0, 0)'
+    });
+
+    // msTransform is correct already and shouldn't warn
+    expect(console.warn.argsForCall.length).toBe(2);
+    expect(console.warn.argsForCall[0][0]).toContain('oTransform');
+    expect(console.warn.argsForCall[0][0]).toContain('OTransform');
+    expect(console.warn.argsForCall[1][0]).toContain('webkitTransform');
+    expect(console.warn.argsForCall[1][0]).toContain('WebkitTransform');
+  });
+
+  it('should warn about style having a trailing semicolon', function() {
+    spyOn(console, 'warn');
+
+    CSSPropertyOperations.createMarkupForStyles({
+      fontFamily: 'Helvetica, arial',
+      backgroundImage: 'url(foo;bar)',
+      backgroundColor: 'blue;',
+      color: 'red;   '
+    });
+
+    expect(console.warn.calls.length).toBe(2);
+    expect(console.warn.argsForCall[0][0]).toContain('Try "backgroundColor: blue" instead');
+    expect(console.warn.argsForCall[1][0]).toContain('Try "color: red" instead');
+  });
 });

@@ -1,32 +1,27 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @jsx React.DOM
  * @emails react-core
  */
 
 /*jslint evil: true */
 
-"use strict";
+'use strict';
 
 require('mock-modules');
 
 var React = require('React');
+var ReactFragment = require('ReactFragment');
 var ReactTestUtils = require('ReactTestUtils');
 
 var reactComponentExpect = require('reactComponentExpect');
+
+var frag = ReactFragment.create;
 
 // Helpers
 var testAllPermutations = function(testCases) {
@@ -58,8 +53,9 @@ var updateChildren = function(d, children) {
 };
 
 var expectChildren = function(d, children) {
+  var textNode;
   if (typeof children === 'string') {
-    var textNode = d.getDOMNode().firstChild;
+    textNode = d.getDOMNode().firstChild;
 
     if (children === '') {
       expect(textNode != null).toBe(false);
@@ -75,18 +71,24 @@ var expectChildren = function(d, children) {
       var child = children[i];
 
       if (typeof child === 'string') {
-        var textWrapperNode =
-          reactComponentExpect(d)
-            .expectRenderedChildAt(i)
-            .toBeTextComponent()
-            .instance();
+        reactComponentExpect(d)
+          .expectRenderedChildAt(i)
+          .toBeTextComponentWithValue(child);
 
-        expectChildren(textWrapperNode, child);
+        textNode = d.getDOMNode().childNodes[i].firstChild;
+
+        if (child === '') {
+          expect(textNode != null).toBe(false);
+        } else {
+          expect(textNode != null).toBe(true);
+          expect(textNode.nodeType).toBe(3);
+          expect(textNode.data).toBe('' + child);
+        }
       } else {
         var elementDOMNode =
           reactComponentExpect(d)
             .expectRenderedChildAt(i)
-            .toBeComponentOfType(React.DOM.div)
+            .toBeComponentOfType('div')
             .instance()
             .getDOMNode();
 
@@ -183,18 +185,18 @@ describe('ReactMultiChildText', function() {
       ['', 'foo', [true, <div />, 1.2, ''], 'foo'], ['', 'foo', <div />, '1.2', '', 'foo'],
 
       // values inside objects
-      [{a: true}, {a: true}], [],
-      [{a: 1.2}, {a: 1.2}], ['1.2', '1.2'],
-      [{a: ''}, {a: ''}], ['', ''],
-      [{a: 'foo'}, {a: 'foo'}], ['foo', 'foo'],
-      [{a: <div />}, {a: <div />}], [<div />, <div />],
+      [frag({a: true}), frag({a: true})], [],
+      [frag({a: 1.2}), frag({a: 1.2})], ['1.2', '1.2'],
+      [frag({a: ''}), frag({a: ''})], ['', ''],
+      [frag({a: 'foo'}), frag({a: 'foo'})], ['foo', 'foo'],
+      [frag({a: <div />}), frag({a: <div />})], [<div />, <div />],
 
-      [{a: true, b: 1.2, c: <div />}, '', 'foo'], ['1.2', <div />, '', 'foo'],
-      [1.2, '', {a: <div />, b: 'foo', c: true}], ['1.2', '', <div />, 'foo'],
-      ['', {a: 'foo', b: <div />, c: true}, 1.2], ['', 'foo', <div />, '1.2'],
+      [frag({a: true, b: 1.2, c: <div />}), '', 'foo'], ['1.2', <div />, '', 'foo'],
+      [1.2, '', frag({a: <div />, b: 'foo', c: true})], ['1.2', '', <div />, 'foo'],
+      ['', frag({a: 'foo', b: <div />, c: true}), 1.2], ['', 'foo', <div />, '1.2'],
 
-      [true, {a: 1.2, b: '', c: <div />, d: 'foo'}, true, 1.2], ['1.2', '', <div />, 'foo', '1.2'],
-      ['', 'foo', {a: true, b: <div />, c: 1.2, d: ''}, 'foo'], ['', 'foo', <div />, '1.2', '', 'foo'],
+      [true, frag({a: 1.2, b: '', c: <div />, d: 'foo'}), true, 1.2], ['1.2', '', <div />, 'foo', '1.2'],
+      ['', 'foo', frag({a: true, b: <div />, c: 1.2, d: ''}), 'foo'], ['', 'foo', <div />, '1.2', '', 'foo'],
 
       // values inside elements
       [<div>{true}{1.2}{<div />}</div>, '', 'foo'], [<div />, '', 'foo'],
@@ -215,23 +217,18 @@ describe('ReactMultiChildText', function() {
   });
 
   it('should render between nested components and inline children', function() {
-    var container = document.createElement('div');
-    React.renderComponent(<div><h1><span /><span /></h1></div>, container);
+    ReactTestUtils.renderIntoDocument(<div><h1><span /><span /></h1></div>);
 
     expect(function() {
-      React.renderComponent(<div><h1>A</h1></div>, container);
+      ReactTestUtils.renderIntoDocument(<div><h1>A</h1></div>);
     }).not.toThrow();
 
-    React.renderComponent(<div><h1><span /><span /></h1></div>, container);
-
     expect(function() {
-      React.renderComponent(<div><h1>{['A']}</h1></div>, container);
+      ReactTestUtils.renderIntoDocument(<div><h1>{['A']}</h1></div>);
     }).not.toThrow();
 
-    React.renderComponent(<div><h1><span /><span /></h1></div>, container);
-
     expect(function() {
-      React.renderComponent(<div><h1>{['A', 'B']}</h1></div>, container);
+      ReactTestUtils.renderIntoDocument(<div><h1>{['A', 'B']}</h1></div>);
     }).not.toThrow();
   });
 });

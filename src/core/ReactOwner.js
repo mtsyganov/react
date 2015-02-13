@@ -1,24 +1,16 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactOwner
  */
 
-"use strict";
+'use strict';
 
-var emptyObject = require('emptyObject');
 var invariant = require('invariant');
 
 /**
@@ -107,51 +99,9 @@ var ReactOwner = {
     );
     // Check that `component` is still the current ref because we do not want to
     // detach the ref if another component stole it.
-    if (owner.refs[ref] === component) {
+    if (owner.getPublicInstance().refs[ref] === component.getPublicInstance()) {
       owner.detachRef(ref);
     }
-  },
-
-  /**
-   * A ReactComponent must mix this in to have refs.
-   *
-   * @lends {ReactOwner.prototype}
-   */
-  Mixin: {
-
-    construct: function() {
-      this.refs = emptyObject;
-    },
-
-    /**
-     * Lazily allocates the refs object and stores `component` as `ref`.
-     *
-     * @param {string} ref Reference name.
-     * @param {component} component Component to store as `ref`.
-     * @final
-     * @private
-     */
-    attachRef: function(ref, component) {
-      invariant(
-        component.isOwnedBy(this),
-        'attachRef(%s, ...): Only a component\'s owner can store a ref to it.',
-        ref
-      );
-      var refs = this.refs === emptyObject ? (this.refs = {}) : this.refs;
-      refs[ref] = component;
-    },
-
-    /**
-     * Detaches a reference name.
-     *
-     * @param {string} ref Name to dereference.
-     * @final
-     * @private
-     */
-    detachRef: function(ref) {
-      delete this.refs[ref];
-    }
-
   }
 
 };

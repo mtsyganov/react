@@ -101,11 +101,15 @@ var JQueryMobilePage = React.createClass({
   },
 
   render: function() {
-    return this.transferPropsTo(React.DOM.div(null,
+    var props = {};
+    for (var key in this.props) {
+      props[key] = this.props[key];
+    }
+    return React.DOM.div(props,
       JQueryMobileHeader({title:'Page ' + this.props.id, headerTheme:this.props.headerTheme}),
       JQueryMobileContent(null, this.props.children),
       JQueryMobileFooter(null)
-    ));
+    );
   }
 });
 
@@ -175,4 +179,4 @@ var PagePopUpContent = React.createClass({
 });
 
 // Render application.
-React.renderComponent(App(null), document.getElementById('content'));
+React.render(App(null), document.getElementById('content'));

@@ -13,8 +13,6 @@ For child-parent communication:
 Say your `GroceryList` component has a list of items generated through an array. When a list item is clicked, you want to display its name:
 
 ```js
-/** @jsx React.DOM */
-
 var GroceryList = React.createClass({
   handleClick: function(i) {
     console.log('You clicked: ' + this.props.items[i]);
@@ -33,11 +31,11 @@ var GroceryList = React.createClass({
   }
 });
 
-React.renderComponent(
+React.render(
   <GroceryList items={['Apple', 'Banana', 'Cranberry']} />, mountNode
 );
 ```
 
 Notice the use of `bind(this, arg1, arg2, ...)`: we're simply passing more arguments to `handleClick`. This is not a new React concept; it's just JavaScript.
 
-For communication between two components that don't have a parent-child relationship, you can set up your own global event system. Subscribe to events in `componentDidMount()`, unsubscribe in `componentWillUnmount()`, and when you receive an event, call `setState()`.
+For communication between two components that don't have a parent-child relationship, you can set up your own global event system. Subscribe to events in `componentDidMount()`, unsubscribe in `componentWillUnmount()`, and call `setState()` when you receive an event.

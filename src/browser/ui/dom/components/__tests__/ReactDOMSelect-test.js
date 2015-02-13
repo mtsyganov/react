@@ -1,23 +1,15 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @jsx React.DOM
  * @emails react-core
  */
 
-"use strict";
+'use strict';
 
 /*jshint evil:true */
 
@@ -145,6 +137,25 @@ describe('ReactDOMSelect', function() {
     expect(node.options[2].selected).toBe(true);  // twelve
   });
 
+  it('should reset child options selected when they are changed and `value` is set', function() {
+    var stub = <select multiple={true} value={["a", "b"]} />;
+    stub = ReactTestUtils.renderIntoDocument(stub);
+
+    stub.setProps({
+      children: [
+        <option value="a">a</option>,
+        <option value="b">b</option>,
+        <option value="c">c</option>
+      ]
+    });
+
+    var node = stub.getDOMNode();
+
+    expect(node.options[0].selected).toBe(true);  // a
+    expect(node.options[1].selected).toBe(true);  // b
+    expect(node.options[2].selected).toBe(false);  // c
+  });
+
   it('should allow setting `value` with `objectToString`', function() {
     var objectToString = {
       animal: "giraffe",
@@ -189,12 +200,12 @@ describe('ReactDOMSelect', function() {
     expect(node.options[1].selected).toBe(true);  // giraffe
     expect(node.options[2].selected).toBe(false);  // gorilla
 
-    // When making it multiple, giraffe should still be selected
-    stub.setProps({multiple: true, defaultValue: null});
+    // When making it multiple, giraffe and gorilla should be selected
+    stub.setProps({multiple: true, defaultValue: ['giraffe', 'gorilla']});
 
     expect(node.options[0].selected).toBe(false);  // monkey
     expect(node.options[1].selected).toBe(true);  // giraffe
-    expect(node.options[2].selected).toBe(false);  // gorilla
+    expect(node.options[2].selected).toBe(true);  // gorilla
   });
 
   it('should allow switching from multiple', function() {
@@ -211,13 +222,57 @@ describe('ReactDOMSelect', function() {
     expect(node.options[1].selected).toBe(true);  // giraffe
     expect(node.options[2].selected).toBe(true);  // gorilla
 
-    // When removing multiple, giraffe should still be selected (but gorilla
-    // will no longer be)
-    stub.setProps({multiple: false, defaultValue: null});
+    // When removing multiple, defaultValue is applied again, being omitted
+    // means that "monkey" will be selected
+    stub.setProps({multiple: false, defaultValue: 'gorilla'});
+
+    expect(node.options[0].selected).toBe(false);  // monkey
+    expect(node.options[1].selected).toBe(false);  // giraffe
+    expect(node.options[2].selected).toBe(true);  // gorilla
+  });
+
+  it('should remember value when switching to uncontrolled', function() {
+    var stub =
+      <select value={'giraffe'}>
+        <option value="monkey">A monkey!</option>
+        <option value="giraffe">A giraffe!</option>
+        <option value="gorilla">A gorilla!</option>
+      </select>;
+    stub = ReactTestUtils.renderIntoDocument(stub);
+    var node = stub.getDOMNode();
 
     expect(node.options[0].selected).toBe(false);  // monkey
     expect(node.options[1].selected).toBe(true);  // giraffe
     expect(node.options[2].selected).toBe(false);  // gorilla
+
+    stub.setProps({value: null});
+
+    expect(node.options[0].selected).toBe(false);  // monkey
+    expect(node.options[1].selected).toBe(true);  // giraffe
+    expect(node.options[2].selected).toBe(false);  // gorilla
+  });
+
+  it('should remember updated value when switching to uncontrolled', function() {
+    var stub =
+      <select value={'giraffe'}>
+        <option value="monkey">A monkey!</option>
+        <option value="giraffe">A giraffe!</option>
+        <option value="gorilla">A gorilla!</option>
+      </select>;
+    stub = ReactTestUtils.renderIntoDocument(stub);
+    var node = stub.getDOMNode();
+
+    stub.setProps({value: 'gorilla'});
+
+    expect(node.options[0].selected).toBe(false);  // monkey
+    expect(node.options[1].selected).toBe(false);  // giraffe
+    expect(node.options[2].selected).toBe(true);  // gorilla
+
+    stub.setProps({value: null});
+
+    expect(node.options[0].selected).toBe(false);  // monkey
+    expect(node.options[1].selected).toBe(false);  // giraffe
+    expect(node.options[2].selected).toBe(true);  // gorilla
   });
 
   it('should support ReactLink', function() {
