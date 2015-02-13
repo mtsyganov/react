@@ -1,31 +1,21 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @jsx React.DOM
  * @emails react-core
  */
 
 /*jslint evil: true */
 
-"use strict";
+'use strict';
 
 var React = require('React');
-var ReactDOM = require('ReactDOM');
-var ReactMount = require('ReactMount');
 var ReactTestUtils = require('ReactTestUtils');
-var div = React.createFactory(ReactDOM.div); // TODO: use string
+var div = React.createFactory('div');
 
 describe('ReactDOM', function() {
   // TODO: uncomment this test once we can run in phantom, which
@@ -57,11 +47,17 @@ describe('ReactDOM', function() {
   });
   */
 
+  it("allows a DOM element to be used with a string", function() {
+    var element = React.createElement('div', { className: 'foo' });
+    var instance = ReactTestUtils.renderIntoDocument(element);
+    expect(instance.getDOMNode().tagName).toBe('DIV');
+  });
+
   it("should allow children to be passed as an argument", function() {
     var argDiv = ReactTestUtils.renderIntoDocument(
       div(null, 'child')
     );
-    var argNode = ReactMount.getNode(argDiv._rootNodeID);
+    var argNode = argDiv.getDOMNode();
     expect(argNode.innerHTML).toBe('child');
   });
 
@@ -69,7 +65,7 @@ describe('ReactDOM', function() {
     var conflictDiv = ReactTestUtils.renderIntoDocument(
       div({children: 'fakechild'}, 'child')
     );
-    var conflictNode = ReactMount.getNode(conflictDiv._rootNodeID);
+    var conflictNode = conflictDiv.getDOMNode();
     expect(conflictNode.innerHTML).toBe('child');
   });
 
@@ -79,44 +75,47 @@ describe('ReactDOM', function() {
    */
   it("should purge the DOM cache when removing nodes", function() {
     var myDiv = ReactTestUtils.renderIntoDocument(
-      <div>{{
-        theDog: <div className="dog" />,
-        theBird: <div className="bird" />
-      }}</div>
+      <div>
+        <div key="theDog" className="dog" />,
+        <div key="theBird" className="bird" />
+      </div>
     );
     // Warm the cache with theDog
     myDiv.setProps({
-      children: {
-        theDog: <div className="dogbeforedelete" />,
-        theBird: <div className="bird" />
-      }
+      children: [
+        <div key="theDog" className="dogbeforedelete" />,
+        <div key="theBird" className="bird" />
+      ]
     });
     // Remove theDog - this should purge the cache
     myDiv.setProps({
-      children: {
-        theBird: <div className="bird" />
-      }
+      children: [
+        <div key="theBird" className="bird" />
+      ]
     });
     // Now, put theDog back. It's now a different DOM node.
     myDiv.setProps({
-      children: {
-        theDog: <div className="dog" />,
-        theBird: <div className="bird" />
-      }
+      children: [
+        <div key="theDog" className="dog" />,
+        <div key="theBird" className="bird" />
+      ]
     });
     // Change the className of theDog. It will use the same element
     myDiv.setProps({
-      children: {
-        theDog: <div className="bigdog" />,
-        theBird: <div className="bird" />
-      }
+      children: [
+        <div key="theDog" className="bigdog" />,
+        <div key="theBird" className="bird" />
+      ]
     });
-    var root = ReactMount.getNode(myDiv._rootNodeID);
+    var root = myDiv.getDOMNode();
     var dog = root.childNodes[0];
     expect(dog.className).toBe('bigdog');
   });
 
-  it('should be a valid class', function() {
-    expect(React.isValidClass(ReactDOM.div)).toBe(true);
+  it('allow React.DOM factories to be called without warnings', function() {
+    spyOn(console, 'warn');
+    var element = React.DOM.div();
+    expect(element.type).toBe('div');
+    expect(console.warn.argsForCall.length).toBe(0);
   });
 });

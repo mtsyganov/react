@@ -1,19 +1,21 @@
 ---
 id: getting-started-zh-CN
 title: 入门教程
-next: tutorial.html
+permalink: getting-started-zh-CN.html
+next: tutorial-zh-CN.html
+redirect_from: "docs/index-zh-CN.html"
 ---
 
 ## JSFiddle
 
-开始 Hack React 的最简单的方法是用下面 JSFiddle 的Hello Worlds
+开始 Hack React 的最简单的方法是用下面 JSFiddle 的Hello Worlds：
 
- * **[React JSFiddle](http://jsfiddle.net/vjeux/kb3gN/)**
- * [React JSFiddle without JSX](http://jsfiddle.net/vjeux/VkebS/)
+ * **[React JSFiddle](http://jsfiddle.net/reactjs/69z2wepo/)**
+ * [React JSFiddle without JSX](http://jsfiddle.net/reactjs/5vjqabv3/)
 
 ## 入门教程包 (Starter Kit)
 
-开始先下载入门教程包
+开始先下载入门教程包。
 
 <div class="buttons-unit downloads">
   <a href="/react/downloads/react-{{site.react_version}}.zip" class="button">
@@ -21,7 +23,7 @@ next: tutorial.html
   </a>
 </div>
 
-在入门教程包的根目录，创建一个含有下面代码的 `helloworld.html`
+在入门教程包的根目录，创建一个含有下面代码的 `helloworld.html`。
 
 ```html
 <!DOCTYPE html>
@@ -33,8 +35,7 @@ next: tutorial.html
   <body>
     <div id="example"></div>
     <script type="text/jsx">
-      /** @jsx React.DOM */
-      React.renderComponent(
+      React.render(
         <h1>Hello, world!</h1>,
         document.getElementById('example')
       );
@@ -50,15 +51,14 @@ next: tutorial.html
 你的 React JSX 代码文件可以写在另外的文件里。新建下面的 `src/helloworld.js`。
 
 ```javascript
-/** @jsx React.DOM */
-React.renderComponent(
+React.render(
   <h1>Hello, world!</h1>,
   document.getElementById('example')
 );
 ```
 
 然后在 `helloworld.html` 引用该文件：
- 
+
 ```html{10}
 <script type="text/jsx" src="src/helloworld.js"></script>
 ```
@@ -80,17 +80,12 @@ jsx --watch src/ build/
 
 只要你修改了， `build/helloworld.js` 文件会自动生成。
 
-```javascript{3}
-/** @jsx React.DOM */
-React.renderComponent(
-  React.DOM.h1(null, 'Hello, world!'),
+```javascript{2}
+React.render(
+  React.createElement('h1', null, 'Hello, world!'),
   document.getElementById('example')
 );
 ```
-
-> 注意:
->
-> 目前注释解析器还是非常严格；为了让它能够找出 `@jsx` 修饰符，有两个限制是必须的。`@jsx` 注释块必须是代码文件第一个注释。注释必须以 `/**` (`/*` 和 `//` 不起作用) 开头。如果解析器找不到 `@jsx` 注释，它就不会转换代码，直接原样输出到文件。
 
 对照下面更新你的 HTML 代码
 
@@ -100,7 +95,7 @@ React.renderComponent(
   <head>
     <title>Hello React!</title>
     <script src="build/react.js"></script>
-    <!-- No need for JSXTransformer! -->
+    <!-- 不需要 JSXTransformer！ -->
   </head>
   <body>
     <div id="example"></div>
@@ -109,11 +104,16 @@ React.renderComponent(
 </html>
 ```
 
+
 ## 想用 CommonJS？
 
-如果你想在一个模块系统里使用 React，[fork 我们的代码](http://github.com/facebook/react)， `npm install` 然后运行 `grunt`。一个漂亮的 CommonJS 模块集将会被生成。我们的 `jsx` 转换工具可以很轻松的集成到大部分打包系统里（不仅仅是 CommonJS）。
+如果你想在 [browserify](http://browserify.org/)，[webpack](http://webpack.github.io/) 或者或其它兼容CommonJS的模块系统里使用 React，只要使用 [`react` npm 包](https://www.npmjs.org/package/react) 即可。而且，`jsx` 转换工具可以很轻松的地集成到大部分打包系统里（不仅仅是 CommonJS）。
+
 
 ## 下一步
 
-去看看[入门教程](/react/docs/tutorial.html)，然后学习其他在 `/examples` 目录里的示例代码。祝你好运，欢迎来到 React 的世界。
+去看看[入门教程](/react/docs/tutorial.html) 和入门教程包 `examples` 目录下的其它例子学习更多。
 
+我们还有一个社区开发者共建的 Wiki：[workflows, UI-components, routing, data management etc.](https://github.com/facebook/react/wiki/Complementary-Tools)
+
+恭喜你，欢迎来到 React 的世界。

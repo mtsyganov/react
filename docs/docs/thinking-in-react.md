@@ -2,14 +2,18 @@
 id: thinking-in-react
 title: Thinking in React
 prev: tutorial.html
-next: videos.html
+next: conferences.html
 ---
 
 This was originally a [blog post](/react/blog/2013/11/05/thinking-in-react.html) from the [official React blog](/react/blog).
 
-React is, in my opinion, the premier way to build big, fast Web apps with JavaScript. It's scaled very well for us at Facebook and Instagram.
+React is, in my opinion, the premier way to build big, fast Web apps with JavaScript. It has scaled very well for us at Facebook and Instagram.
 
 One of the many great parts of React is how it makes you think about apps as you build them. In this post I'll walk you through the thought process of building a searchable product data table using React.
+
+> Note:
+>
+> If you can't see the embedded code snippets on this page, make sure you're NOT loading this page on `https`.
 
 ## Start with a mock
 
@@ -60,7 +64,7 @@ Now that we've identified the components in our mock, let's arrange them into a 
 
 ## Step 2: Build a static version in React
 
-<iframe width="100%" height="300" src="http://jsfiddle.net/n25pd/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="300" src="http://jsfiddle.net/reactjs/yun1vgqb/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 Now that you have your component hierarchy it's time to start implementing your app. The easiest way is to build a version that takes your data model and renders the UI but has no interactivity. It's easiest to decouple these processes because building a static version requires a lot of typing and no thinking, and adding interactivity requires a lot of thinking and not a lot of typing. We'll see why.
 
@@ -68,7 +72,7 @@ To build a static version of your app that renders your data model you'll want t
 
 You can build top-down or bottom-up. That is, you can either start with building the components higher up in the hierarchy (i.e. starting with `FilterableProductTable`) or with the ones lower in it (`ProductRow`). In simpler examples it's usually easier to go top-down and on larger projects it's easier to go bottom-up and write tests as you build.
 
-At the end of this step you'll have a library of reusable components that render your data model. The components will only have `render()` methods since this is a static version of your app. The component at the top of the hierarchy (`FilterableProductTable`) will take your data model as a prop. If you make a change to your underlying data model and call `renderComponent()` again the UI will be updated. It's easy to see how your UI is updated and where to make changes since there's nothing complicated going on since React's **one-way data flow** (also called *one-way binding*) keeps everything modular, easy to reason about, and fast.
+At the end of this step you'll have a library of reusable components that render your data model. The components will only have `render()` methods since this is a static version of your app. The component at the top of the hierarchy (`FilterableProductTable`) will take your data model as a prop. If you make a change to your underlying data model and call `React.render()` again the UI will be updated. It's easy to see how your UI is updated and where to make changes since there's nothing complicated going on since React's **one-way data flow** (also called *one-way binding*) keeps everything modular, easy to reason about, and fast.
 
 Simply refer to the [React docs](http://facebook.github.io/react/docs/) if you need help executing this step.
 
@@ -104,7 +108,7 @@ So finally, our state is:
 
 ## Step 4: Identify where your state should live
 
-<iframe width="100%" height="300" src="http://jsfiddle.net/t53sx/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="300" src="http://jsfiddle.net/reactjs/zafjbw1e/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 OK, so we've identified what the minimal set of app state is. Next we need to identify which component mutates, or *owns*, this state.
 
@@ -129,7 +133,7 @@ You can start seeing how your application will behave: set `filterText` to `"bal
 
 ## Step 5: Add inverse data flow
 
-<iframe width="100%" height="300" src="http://jsfiddle.net/F8H7p/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="300" src="http://jsfiddle.net/reactjs/n47gckhr/embedded/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 So far we've built an app that renders correctly as a function of props and state flowing down the hierarchy. Now it's time to support data flowing the other way: the form components deep in the hierarchy need to update the state in `FilterableProductTable`.
 
