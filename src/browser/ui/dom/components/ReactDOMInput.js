@@ -60,8 +60,7 @@ function querySelectorAllPolyfill(r, c, i, j, a) {
   for (i = r.length; i--;) {
     s.addRule(r[i], 'k:v');
     for (j = a.length; j--;) {
-      a[j].currentStyle.k;
-      c.push(a[j]);
+      a[j].currentStyle.k && c.push(a[j]);
     }
     s.removeRule(0);
   }
