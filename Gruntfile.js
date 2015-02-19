@@ -1,6 +1,5 @@
 'use strict';
 
-var exec = require('child_process').exec;
 var jsxTask = require('./grunt/tasks/jsx');
 var browserifyTask = require('./grunt/tasks/browserify');
 var populistTask = require('./grunt/tasks/populist');
@@ -13,6 +12,7 @@ var npmReactTasks = require('./grunt/tasks/npm-react');
 var npmReactToolsTasks = require('./grunt/tasks/npm-react-tools');
 var versionCheckTask = require('./grunt/tasks/version-check');
 var gemReactSourceTasks = require('./grunt/tasks/gem-react-source');
+var eslintTask = require('./grunt/tasks/eslint');
 
 module.exports = function(grunt) {
 
@@ -23,25 +23,43 @@ module.exports = function(grunt) {
     browserify: require('./grunt/config/browserify'),
     populist: require('./grunt/config/populist')(grunt),
     connect: require('./grunt/config/server')(grunt),
-    "webdriver-jasmine": require('./grunt/config/webdriver-jasmine'),
-    "webdriver-perf": require('./grunt/config/webdriver-perf'),
+    'webdriver-jasmine': require('./grunt/config/webdriver-jasmine'),
+    'webdriver-perf': require('./grunt/config/webdriver-perf'),
     npm: require('./grunt/config/npm'),
-    clean: ['./build', './*.gem', './docs/_site', './examples/shared/*.js', '.module-cache'],
+    clean: [
+      './build',
+      './*.gem',
+      './docs/_site',
+      './examples/shared/*.js',
+      '.module-cache'
+    ],
     jshint: require('./grunt/config/jshint'),
+    /*eslint-disable camelcase */
     compare_size: require('./grunt/config/compare_size')
+    /*eslint-enable camelcase */
   });
 
   grunt.config.set('compress', require('./grunt/config/compress'));
 
   Object.keys(grunt.file.readJSON('package.json').devDependencies)
-    .filter(function(npmTaskName) { return npmTaskName.indexOf('grunt-') === 0; })
-    .filter(function(npmTaskName) { return npmTaskName != 'grunt-cli'; })
-    .forEach(function(npmTaskName) { grunt.loadNpmTasks(npmTaskName); });
+    .filter(function(npmTaskName) {
+      return npmTaskName.indexOf('grunt-') === 0;
+    })
+    .filter(function(npmTaskName) {
+      return npmTaskName !== 'grunt-cli';
+    })
+    .forEach(function(npmTaskName) {
+      grunt.loadNpmTasks(npmTaskName);
+    });
 
-  // Alias 'jshint' to 'lint' to better match the workflow we know
-  grunt.registerTask('lint', ['jshint']);
+  grunt.registerTask('eslint', eslintTask);
 
-  grunt.registerTask('download-previous-version', require('./grunt/tasks/download-previous-version.js'));
+  grunt.registerTask('lint', ['eslint']);
+
+  grunt.registerTask(
+    'download-previous-version',
+    require('./grunt/tasks/download-previous-version.js')
+  );
 
   grunt.registerTask('delete-build-modules', function() {
     if (grunt.file.exists('build/modules')) {
@@ -74,11 +92,28 @@ module.exports = function(grunt) {
 
   grunt.registerTask('version-check', versionCheckTask);
 
-  grunt.registerTask('build:basic', ['jsx:normal', 'version-check', 'browserify:basic']);
-  grunt.registerTask('build:addons', ['jsx:normal', 'browserify:addons']);
-  grunt.registerTask('build:transformer', ['jsx:normal', 'browserify:transformer']);
-  grunt.registerTask('build:min', ['jsx:normal', 'version-check', 'browserify:min']);
-  grunt.registerTask('build:addons-min', ['jsx:normal', 'browserify:addonsMin']);
+  grunt.registerTask('build:basic', [
+    'jsx:normal',
+    'version-check',
+    'browserify:basic'
+  ]);
+  grunt.registerTask('build:addons', [
+    'jsx:normal',
+    'browserify:addons'
+  ]);
+  grunt.registerTask('build:transformer', [
+    'jsx:normal',
+    'browserify:transformer'
+  ]);
+  grunt.registerTask('build:min', [
+    'jsx:normal',
+    'version-check',
+    'browserify:min'
+  ]);
+  grunt.registerTask('build:addons-min', [
+    'jsx:normal',
+    'browserify:addonsMin'
+  ]);
   grunt.registerTask('build:withCodeCoverageLogging', [
     'jsx:normal',
     'version-check',
@@ -98,8 +133,15 @@ module.exports = function(grunt) {
     'version-check',
     'populist:test'
   ]);
-  grunt.registerTask('build:npm-react', ['version-check', 'jsx:normal', 'npm-react:release']);
-  grunt.registerTask('build:gem-react-source', ['build', 'gem-react-source:release'])
+  grunt.registerTask('build:npm-react', [
+    'version-check',
+    'jsx:normal',
+    'npm-react:release'
+  ]);
+  grunt.registerTask('build:gem-react-source', [
+    'build',
+    'gem-react-source:release'
+  ]);
 
   grunt.registerTask('webdriver-phantomjs', webdriverPhantomJSTask);
 
@@ -142,7 +184,7 @@ module.exports = function(grunt) {
     'webdriver-perf:saucelabs_firefox',
     'webdriver-perf:saucelabs_chrome',
     'webdriver-perf:saucelabs_ie11',
-    'webdriver-perf:saucelabs_ie8',
+    'webdriver-perf:saucelabs_ie8'
   ]);
 
   grunt.registerTask('test:webdriver:saucelabs', [

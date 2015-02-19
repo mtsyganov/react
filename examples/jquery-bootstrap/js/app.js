@@ -1,22 +1,19 @@
-/** @jsx React.DOM */
-
 // Simple pure-React component so we don't have to remember
 // Bootstrap's classes
 var BootstrapButton = React.createClass({
   render: function() {
-    // transferPropsTo() is smart enough to merge classes provided
-    // to this component.
-    return this.transferPropsTo(
-      <a href="javascript:;" role="button" className="btn">
-        {this.props.children}
-      </a>
+    return (
+      <a {...this.props}
+        href="javascript:;"
+        role="button"
+        className={(this.props.className || '') + ' btn'} />
     );
   }
 });
 
 var BootstrapModal = React.createClass({
   // The following two methods are the only places we need to
-  // integrate with Bootstrap or jQuery!
+  // integrate Bootstrap or jQuery with the components lifecycle methods.
   componentDidMount: function() {
     // When the component is added, turn it into a modal
     $(this.getDOMNode())
@@ -125,4 +122,4 @@ var Example = React.createClass({
   }
 });
 
-React.renderComponent(<Example />, document.getElementById('jqueryexample'));
+React.render(<Example />, document.getElementById('jqueryexample'));

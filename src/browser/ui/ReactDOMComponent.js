@@ -1,41 +1,35 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactDOMComponent
  * @typechecks static-only
  */
 
-"use strict";
+/* global hasOwnProperty:true */
+
+'use strict';
 
 var CSSPropertyOperations = require('CSSPropertyOperations');
 var DOMProperty = require('DOMProperty');
 var DOMPropertyOperations = require('DOMPropertyOperations');
-var ReactBrowserComponentMixin = require('ReactBrowserComponentMixin');
-var ReactComponent = require('ReactComponent');
 var ReactBrowserEventEmitter = require('ReactBrowserEventEmitter');
+var ReactComponentBrowserEnvironment =
+  require('ReactComponentBrowserEnvironment');
 var ReactMount = require('ReactMount');
 var ReactMultiChild = require('ReactMultiChild');
 var ReactPerf = require('ReactPerf');
 
-var escapeTextForBrowser = require('escapeTextForBrowser');
+var assign = require('Object.assign');
+var escapeTextContentForBrowser = require('escapeTextContentForBrowser');
 var invariant = require('invariant');
 var isEventSupported = require('isEventSupported');
 var keyOf = require('keyOf');
-var merge = require('merge');
-var mixInto = require('mixInto');
-var monitorCodeUse = require('monitorCodeUse');
+var warning = require('warning');
 
 var deleteListener = ReactBrowserEventEmitter.deleteListener;
 var listenTo = ReactBrowserEventEmitter.listenTo;
@@ -49,6 +43,11 @@ var STYLE = keyOf({style: null});
 var ELEMENT_NODE_TYPE = 1;
 
 /**
+ * Optionally injectable operations for mutating the DOM
+ */
+var BackendIDOperations = null;
+
+/**
  * @param {?object} props
  */
 function assertValidProps(props) {
@@ -56,14 +55,37 @@ function assertValidProps(props) {
     return;
   }
   // Note the use of `==` which checks for null or undefined.
-  invariant(
-    props.children == null || props.dangerouslySetInnerHTML == null,
-    'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
-  );
+  if (props.dangerouslySetInnerHTML != null) {
+    invariant(
+      props.children == null,
+      'Can only set one of `children` or `props.dangerouslySetInnerHTML`.'
+    );
+    invariant(
+      props.dangerouslySetInnerHTML.__html != null,
+      '`props.dangerouslySetInnerHTML` must be in the form `{__html: ...}`. ' +
+      'Please visit http://fb.me/react-invariant-dangerously-set-inner-html ' +
+      'for more information.'
+    );
+  }
+  if (__DEV__) {
+    warning(
+      props.innerHTML == null,
+      'Directly setting property `innerHTML` is not permitted. ' +
+      'For more information, lookup documentation on `dangerouslySetInnerHTML`.'
+    );
+    warning(
+      !props.contentEditable || props.children == null,
+      'A component is `contentEditable` and contains `children` managed by ' +
+      'React. It is now your responsibility to guarantee that none of ' +
+      'those nodes are unexpectedly modified or duplicated. This is ' +
+      'probably not intentional.'
+    );
+  }
   invariant(
     props.style == null || typeof props.style === 'object',
     'The `style` prop expects a mapping from style properties to values, ' +
-    'not a string.'
+    'not a string. For example, style={{marginRight: spacing + \'em\'}} when ' +
+    'using JSX.'
   );
 }
 
@@ -71,11 +93,10 @@ function putListener(id, registrationName, listener, transaction) {
   if (__DEV__) {
     // IE8 has no API for event capturing and the `onScroll` event doesn't
     // bubble.
-    if (registrationName === 'onScroll' &&
-        !isEventSupported('scroll', true)) {
-      monitorCodeUse('react_no_scroll_event');
-      console.warn('This browser doesn\'t support the `onScroll` event');
-    }
+    warning(
+      registrationName !== 'onScroll' || isEventSupported('scroll', true),
+      'This browser doesn\'t support the `onScroll` event'
+    );
   }
   var container = ReactMount.findReactContainerForID(id);
   if (container) {
@@ -91,19 +112,72 @@ function putListener(id, registrationName, listener, transaction) {
   );
 }
 
+// For HTML, certain tags should omit their close tag. We keep a whitelist for
+// those special cased tags.
 
-/**
- * @constructor ReactDOMComponent
- * @extends ReactComponent
- * @extends ReactMultiChild
- */
-function ReactDOMComponent(tag, omitClose) {
-  this._tagOpen = '<' + tag;
-  this._tagClose = omitClose ? '' : '</' + tag + '>';
-  this.tagName = tag.toUpperCase();
+var omittedCloseTags = {
+  'area': true,
+  'base': true,
+  'br': true,
+  'col': true,
+  'embed': true,
+  'hr': true,
+  'img': true,
+  'input': true,
+  'keygen': true,
+  'link': true,
+  'meta': true,
+  'param': true,
+  'source': true,
+  'track': true,
+  'wbr': true
+  // NOTE: menuitem's close tag should be omitted, but that causes problems.
+};
+
+// We accept any tag to be rendered but since this gets injected into abitrary
+// HTML, we want to make sure that it's a safe tag.
+// http://www.w3.org/TR/REC-xml/#NT-Name
+
+var VALID_TAG_REGEX = /^[a-zA-Z][a-zA-Z:_\.\-\d]*$/; // Simplified subset
+var validatedTagCache = {};
+var hasOwnProperty = {}.hasOwnProperty;
+
+function validateDangerousTag(tag) {
+  if (!hasOwnProperty.call(validatedTagCache, tag)) {
+    invariant(VALID_TAG_REGEX.test(tag), 'Invalid tag: %s', tag);
+    validatedTagCache[tag] = true;
+  }
 }
 
+/**
+ * Creates a new React class that is idempotent and capable of containing other
+ * React components. It accepts event listeners and DOM properties that are
+ * valid according to `DOMProperty`.
+ *
+ *  - Event listeners: `onClick`, `onMouseDown`, etc.
+ *  - DOM properties: `className`, `name`, `title`, etc.
+ *
+ * The `style` property functions differently from the DOM API. It accepts an
+ * object mapping of style properties to values.
+ *
+ * @constructor ReactDOMComponent
+ * @extends ReactMultiChild
+ */
+function ReactDOMComponent(tag) {
+  validateDangerousTag(tag);
+  this._tag = tag;
+  this._renderedChildren = null;
+  this._previousStyleCopy = null;
+  this._rootNodeID = null;
+}
+
+ReactDOMComponent.displayName = 'ReactDOMComponent';
+
 ReactDOMComponent.Mixin = {
+
+  construct: function(element) {
+    this._currentElement = element;
+  },
 
   /**
    * Generates root tag markup then recurses. This method has side effects and
@@ -112,27 +186,18 @@ ReactDOMComponent.Mixin = {
    * @internal
    * @param {string} rootID The root DOM ID for this node.
    * @param {ReactReconcileTransaction|ReactServerRenderingTransaction} transaction
-   * @param {number} mountDepth number of components in the owner hierarchy
    * @return {string} The computed markup.
    */
-  mountComponent: ReactPerf.measure(
-    'ReactDOMComponent',
-    'mountComponent',
-    function(rootID, transaction, mountDepth) {
-      ReactComponent.Mixin.mountComponent.call(
-        this,
-        rootID,
-        transaction,
-        mountDepth
-      );
-      assertValidProps(this.props);
-      return (
-        this._createOpenTagMarkupAndPutListeners(transaction) +
-        this._createContentMarkup(transaction) +
-        this._tagClose
-      );
-    }
-  ),
+  mountComponent: function(rootID, transaction, context) {
+    this._rootNodeID = rootID;
+    assertValidProps(this._currentElement.props);
+    var closeTag = omittedCloseTags[this._tag] ? '' : '</' + this._tag + '>';
+    return (
+      this._createOpenTagMarkupAndPutListeners(transaction) +
+      this._createContentMarkup(transaction, context) +
+      closeTag
+    );
+  },
 
   /**
    * Creates markup for the open tag and all attributes.
@@ -147,8 +212,8 @@ ReactDOMComponent.Mixin = {
    * @return {string} Markup of opening tag.
    */
   _createOpenTagMarkupAndPutListeners: function(transaction) {
-    var props = this.props;
-    var ret = this._tagOpen;
+    var props = this._currentElement.props;
+    var ret = '<' + this._tag;
 
     for (var propKey in props) {
       if (!props.hasOwnProperty(propKey)) {
@@ -163,7 +228,7 @@ ReactDOMComponent.Mixin = {
       } else {
         if (propKey === STYLE) {
           if (propValue) {
-            propValue = props.style = merge(props.style);
+            propValue = this._previousStyleCopy = assign({}, props.style);
           }
           propValue = CSSPropertyOperations.createMarkupForStyles(propValue);
         }
@@ -190,50 +255,50 @@ ReactDOMComponent.Mixin = {
    *
    * @private
    * @param {ReactReconcileTransaction|ReactServerRenderingTransaction} transaction
+   * @param {object} context
    * @return {string} Content markup.
    */
-  _createContentMarkup: function(transaction) {
+  _createContentMarkup: function(transaction, context) {
+    var prefix = '';
+    if (this._tag === 'listing' ||
+        this._tag === 'pre' ||
+        this._tag === 'textarea') {
+      // Add an initial newline because browsers ignore the first newline in
+      // a <listing>, <pre>, or <textarea> as an "authoring convenience" -- see
+      // https://html.spec.whatwg.org/multipage/syntax.html#parsing-main-inbody.
+      prefix = '\n';
+    }
+
+    var props = this._currentElement.props;
+
     // Intentional use of != to avoid catching zero/false.
-    var innerHTML = this.props.dangerouslySetInnerHTML;
+    var innerHTML = props.dangerouslySetInnerHTML;
     if (innerHTML != null) {
       if (innerHTML.__html != null) {
-        return innerHTML.__html;
+        return prefix + innerHTML.__html;
       }
     } else {
       var contentToUse =
-        CONTENT_TYPES[typeof this.props.children] ? this.props.children : null;
-      var childrenToUse = contentToUse != null ? null : this.props.children;
+        CONTENT_TYPES[typeof props.children] ? props.children : null;
+      var childrenToUse = contentToUse != null ? null : props.children;
       if (contentToUse != null) {
-        return escapeTextForBrowser(contentToUse);
+        return prefix + escapeTextContentForBrowser(contentToUse);
       } else if (childrenToUse != null) {
         var mountImages = this.mountChildren(
           childrenToUse,
-          transaction
+          transaction,
+          context
         );
-        return mountImages.join('');
+        return prefix + mountImages.join('');
       }
     }
-    return '';
+    return prefix;
   },
 
-  receiveComponent: function(nextDescriptor, transaction) {
-    if (nextDescriptor === this._descriptor &&
-        nextDescriptor._owner != null) {
-      // Since descriptors are immutable after the owner is rendered,
-      // we can do a cheap identity compare here to determine if this is a
-      // superfluous reconcile. It's possible for state to be mutable but such
-      // change should trigger an update of the owner which would recreate
-      // the descriptor. We explicitly check for the existence of an owner since
-      // it's possible for a descriptor created outside a composite to be
-      // deeply mutated and reused.
-      return;
-    }
-
-    ReactComponent.Mixin.receiveComponent.call(
-      this,
-      nextDescriptor,
-      transaction
-    );
+  receiveComponent: function(nextElement, transaction, context) {
+    var prevElement = this._currentElement;
+    this._currentElement = nextElement;
+    this.updateComponent(transaction, prevElement, nextElement, context);
   },
 
   /**
@@ -241,24 +306,16 @@ ReactDOMComponent.Mixin = {
    * attached to the DOM. Reconciles the root DOM node, then recurses.
    *
    * @param {ReactReconcileTransaction} transaction
-   * @param {ReactDescriptor} prevDescriptor
+   * @param {ReactElement} prevElement
+   * @param {ReactElement} nextElement
    * @internal
    * @overridable
    */
-  updateComponent: ReactPerf.measure(
-    'ReactDOMComponent',
-    'updateComponent',
-    function(transaction, prevDescriptor) {
-      assertValidProps(this._descriptor.props);
-      ReactComponent.Mixin.updateComponent.call(
-        this,
-        transaction,
-        prevDescriptor
-      );
-      this._updateDOMProperties(prevDescriptor.props, transaction);
-      this._updateDOMChildren(prevDescriptor.props, transaction);
-    }
-  ),
+  updateComponent: function(transaction, prevElement, nextElement, context) {
+    assertValidProps(this._currentElement.props);
+    this._updateDOMProperties(prevElement.props, transaction);
+    this._updateDOMChildren(prevElement.props, transaction, context);
+  },
 
   /**
    * Reconciles the properties by detecting differences in property values and
@@ -276,7 +333,7 @@ ReactDOMComponent.Mixin = {
    * @param {ReactReconcileTransaction} transaction
    */
   _updateDOMProperties: function(lastProps, transaction) {
-    var nextProps = this.props;
+    var nextProps = this._currentElement.props;
     var propKey;
     var styleName;
     var styleUpdates;
@@ -286,7 +343,7 @@ ReactDOMComponent.Mixin = {
         continue;
       }
       if (propKey === STYLE) {
-        var lastStyle = lastProps[propKey];
+        var lastStyle = this._previousStyleCopy;
         for (styleName in lastStyle) {
           if (lastStyle.hasOwnProperty(styleName)) {
             styleUpdates = styleUpdates || {};
@@ -298,7 +355,7 @@ ReactDOMComponent.Mixin = {
       } else if (
           DOMProperty.isStandardName[propKey] ||
           DOMProperty.isCustomAttribute(propKey)) {
-        ReactComponent.BackendIDOperations.deletePropertyByID(
+        BackendIDOperations.deletePropertyByID(
           this._rootNodeID,
           propKey
         );
@@ -306,13 +363,15 @@ ReactDOMComponent.Mixin = {
     }
     for (propKey in nextProps) {
       var nextProp = nextProps[propKey];
-      var lastProp = lastProps[propKey];
+      var lastProp = propKey === STYLE ?
+        this._previousStyleCopy :
+        lastProps[propKey];
       if (!nextProps.hasOwnProperty(propKey) || nextProp === lastProp) {
         continue;
       }
       if (propKey === STYLE) {
         if (nextProp) {
-          nextProp = nextProps.style = merge(nextProp);
+          nextProp = this._previousStyleCopy = assign({}, nextProp);
         }
         if (lastProp) {
           // Unset styles on `lastProp` but not on `nextProp`.
@@ -340,7 +399,7 @@ ReactDOMComponent.Mixin = {
       } else if (
           DOMProperty.isStandardName[propKey] ||
           DOMProperty.isCustomAttribute(propKey)) {
-        ReactComponent.BackendIDOperations.updatePropertyByID(
+        BackendIDOperations.updatePropertyByID(
           this._rootNodeID,
           propKey,
           nextProp
@@ -348,7 +407,7 @@ ReactDOMComponent.Mixin = {
       }
     }
     if (styleUpdates) {
-      ReactComponent.BackendIDOperations.updateStylesByID(
+      BackendIDOperations.updateStylesByID(
         this._rootNodeID,
         styleUpdates
       );
@@ -362,8 +421,8 @@ ReactDOMComponent.Mixin = {
    * @param {object} lastProps
    * @param {ReactReconcileTransaction} transaction
    */
-  _updateDOMChildren: function(lastProps, transaction) {
-    var nextProps = this.props;
+  _updateDOMChildren: function(lastProps, transaction, context) {
+    var nextProps = this._currentElement.props;
 
     var lastContent =
       CONTENT_TYPES[typeof lastProps.children] ? lastProps.children : null;
@@ -386,7 +445,7 @@ ReactDOMComponent.Mixin = {
     var lastHasContentOrHtml = lastContent != null || lastHtml != null;
     var nextHasContentOrHtml = nextContent != null || nextHtml != null;
     if (lastChildren != null && nextChildren == null) {
-      this.updateChildren(null, transaction);
+      this.updateChildren(null, transaction, context);
     } else if (lastHasContentOrHtml && !nextHasContentOrHtml) {
       this.updateTextContent('');
     }
@@ -397,13 +456,13 @@ ReactDOMComponent.Mixin = {
       }
     } else if (nextHtml != null) {
       if (lastHtml !== nextHtml) {
-        ReactComponent.BackendIDOperations.updateInnerHTMLByID(
+        BackendIDOperations.updateInnerHTMLByID(
           this._rootNodeID,
           nextHtml
         );
       }
     } else if (nextChildren != null) {
-      this.updateChildren(nextChildren, transaction);
+      this.updateChildren(nextChildren, transaction, context);
     }
   },
 
@@ -416,14 +475,27 @@ ReactDOMComponent.Mixin = {
   unmountComponent: function() {
     this.unmountChildren();
     ReactBrowserEventEmitter.deleteAllListeners(this._rootNodeID);
-    ReactComponent.Mixin.unmountComponent.call(this);
+    ReactComponentBrowserEnvironment.unmountIDFromEnvironment(this._rootNodeID);
+    this._rootNodeID = null;
   }
 
 };
 
-mixInto(ReactDOMComponent, ReactComponent.Mixin);
-mixInto(ReactDOMComponent, ReactDOMComponent.Mixin);
-mixInto(ReactDOMComponent, ReactMultiChild.Mixin);
-mixInto(ReactDOMComponent, ReactBrowserComponentMixin);
+ReactPerf.measureMethods(ReactDOMComponent, 'ReactDOMComponent', {
+  mountComponent: 'mountComponent',
+  updateComponent: 'updateComponent'
+});
+
+assign(
+  ReactDOMComponent.prototype,
+  ReactDOMComponent.Mixin,
+  ReactMultiChild.Mixin
+);
+
+ReactDOMComponent.injection = {
+  injectIDOperations: function(IDOperations) {
+    ReactDOMComponent.BackendIDOperations = BackendIDOperations = IDOperations;
+  }
+};
 
 module.exports = ReactDOMComponent;

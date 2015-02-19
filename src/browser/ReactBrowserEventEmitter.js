@@ -1,23 +1,16 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactBrowserEventEmitter
  * @typechecks static-only
  */
 
-"use strict";
+'use strict';
 
 var EventConstants = require('EventConstants');
 var EventPluginHub = require('EventPluginHub');
@@ -25,8 +18,8 @@ var EventPluginRegistry = require('EventPluginRegistry');
 var ReactEventEmitterMixin = require('ReactEventEmitterMixin');
 var ViewportMetrics = require('ViewportMetrics');
 
+var assign = require('Object.assign');
 var isEventSupported = require('isEventSupported');
-var merge = require('merge');
 
 /**
  * Summary of `ReactBrowserEventEmitter` event handling:
@@ -133,7 +126,7 @@ var topEventMapping = {
 /**
  * To ensure no conflicts with other potential React instances on the page
  */
-var topListenersIDKey = "_reactListenersID" + String(Math.random()).slice(2);
+var topListenersIDKey = '_reactListenersID' + String(Math.random()).slice(2);
 
 function getListeningForDocument(mountAt) {
   // In IE8, `mountAt` is a host object and doesn't have `hasOwnProperty`
@@ -155,7 +148,7 @@ function getListeningForDocument(mountAt) {
  *
  * @internal
  */
-var ReactBrowserEventEmitter = merge(ReactEventEmitterMixin, {
+var ReactBrowserEventEmitter = assign({}, ReactEventEmitterMixin, {
 
   /**
    * Injectable event backend
@@ -335,7 +328,7 @@ var ReactBrowserEventEmitter = merge(ReactEventEmitterMixin, {
    *
    * @see http://www.quirksmode.org/dom/events/scroll.html
    */
-  ensureScrollValueMonitoring: function(){
+  ensureScrollValueMonitoring: function() {
     if (!isMonitoringScrollValue) {
       var refresh = ViewportMetrics.refreshScrollValues;
       ReactBrowserEventEmitter.ReactEventListener.monitorScrollValue(refresh);

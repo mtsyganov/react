@@ -1,30 +1,19 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactPropTransferer
  */
 
-"use strict";
+'use strict';
 
+var assign = require('Object.assign');
 var emptyFunction = require('emptyFunction');
-var invariant = require('invariant');
 var joinClasses = require('joinClasses');
-var merge = require('merge');
-var warning = require('warning');
-
-var didWarn = false;
 
 /**
  * Creates a transfer strategy that will merge prop values using the supplied
@@ -47,7 +36,7 @@ var transferStrategyMerge = createTransferStrategy(function(a, b) {
   // `merge` overrides the first object's (`props[key]` above) keys using the
   // second object's (`value`) keys. An object's style's existing `propA` would
   // get overridden. Flip the order here.
-  return merge(b, a);
+  return assign({}, b, a);
 });
 
 /**
@@ -103,8 +92,6 @@ function transferInto(props, newProps) {
  */
 var ReactPropTransferer = {
 
-  TransferStrategies: TransferStrategies,
-
   /**
    * Merge two props objects using TransferStrategies.
    *
@@ -113,56 +100,9 @@ var ReactPropTransferer = {
    * @return {object} a new object containing both sets of props merged.
    */
   mergeProps: function(oldProps, newProps) {
-    return transferInto(merge(oldProps), newProps);
-  },
-
-  /**
-   * @lends {ReactPropTransferer.prototype}
-   */
-  Mixin: {
-
-    /**
-     * Transfer props from this component to a target component.
-     *
-     * Props that do not have an explicit transfer strategy will be transferred
-     * only if the target component does not already have the prop set.
-     *
-     * This is usually used to pass down props to a returned root component.
-     *
-     * @param {ReactDescriptor} descriptor Component receiving the properties.
-     * @return {ReactDescriptor} The supplied `component`.
-     * @final
-     * @protected
-     */
-    transferPropsTo: function(descriptor) {
-      invariant(
-        descriptor._owner === this,
-        '%s: You can\'t call transferPropsTo() on a component that you ' +
-        'don\'t own, %s. This usually means you are calling ' +
-        'transferPropsTo() on a component passed in as props or children.',
-        this.constructor.displayName,
-        descriptor.type.displayName
-      );
-
-      if (__DEV__) {
-        if (!didWarn) {
-          didWarn = true;
-          warning(
-            false,
-            'transferPropsTo is deprecated. ' +
-            'See http://fb.me/react-transferpropsto for more information.'
-          );
-        }
-      }
-
-      // Because descriptors are immutable we have to merge into the existing
-      // props object rather than clone it.
-      transferInto(descriptor.props, this.props);
-
-      return descriptor;
-    }
-
+    return transferInto(assign({}, oldProps), newProps);
   }
+
 };
 
 module.exports = ReactPropTransferer;

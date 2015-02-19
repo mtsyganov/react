@@ -1,24 +1,15 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule flattenChildren
  */
 
-"use strict";
-
-var ReactTextComponent = require('ReactTextComponent');
+'use strict';
 
 var traverseAllChildren = require('traverseAllChildren');
 var warning = require('warning');
@@ -32,26 +23,17 @@ function flattenSingleChildIntoContext(traverseContext, child, name) {
   // We found a component instance.
   var result = traverseContext;
   var keyUnique = !result.hasOwnProperty(name);
-  warning(
-    keyUnique,
-    'flattenChildren(...): Encountered two children with the same key, ' +
-    '`%s`. Child keys must be unique; when two children share a key, only ' +
-    'the first child will be used.',
-    name
-  );
+  if (__DEV__) {
+    warning(
+      keyUnique,
+      'flattenChildren(...): Encountered two children with the same key, ' +
+      '`%s`. Child keys must be unique; when two children share a key, only ' +
+      'the first child will be used.',
+      name
+    );
+  }
   if (keyUnique && child != null) {
-    var type = typeof child;
-    var normalizedValue;
-
-    if (type === 'string') {
-      normalizedValue = ReactTextComponent(child);
-    } else if (type === 'number') {
-      normalizedValue = ReactTextComponent('' + child);
-    } else {
-      normalizedValue = child;
-    }
-
-    result[name] = normalizedValue;
+    result[name] = child;
   }
 }
 

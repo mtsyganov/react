@@ -1,25 +1,18 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule OrderedMap
  */
 
-"use strict";
+'use strict';
 
+var assign = require('Object.assign');
 var invariant = require('invariant');
-var mixInto = require('mixInto');
 
 var PREFIX = 'key:';
 
@@ -36,7 +29,7 @@ var PREFIX = 'key:';
  */
 function extractObjectFromArray(arr, keyExtractor) {
   var normalizedObj = {};
-  for (var i=0; i < arr.length; i++) {
+  for (var i = 0; i < arr.length; i++) {
     var item = arr[i];
     var key = keyExtractor(item);
     assertValidPublicKey(key);
@@ -182,7 +175,7 @@ var OrderedMapMethods = {
 
   /**
    * Returns the object for a given key, or `undefined` if not present. To
-   * distinguish a undefined entry vs not being in the set, use `has()`.
+   * distinguish an undefined entry vs not being in the set, use `has()`.
    *
    * @param {string} key String key to lookup the value for.
    * @return {Object?} Object at key `key`, or undefined if not in map.
@@ -483,7 +476,7 @@ var OrderedMapMethods = {
   }
 };
 
-mixInto(OrderedMapImpl, OrderedMapMethods);
+assign(OrderedMapImpl.prototype, OrderedMapMethods);
 
 var OrderedMap = {
   from: function(orderedMap) {

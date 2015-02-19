@@ -4,10 +4,9 @@ var grunt = require('grunt');
 var _ = require('lodash');
 
 var rootIDs = [
-  "React",
-  "ReactWithAddons"
+  'React',
+  'ReactWithAddons'
 ];
-
 
 var normal = {
   rootIDs: rootIDs,
@@ -17,23 +16,23 @@ var normal = {
       constants: {}
     };
   },
-  sourceDir: "src",
-  outputDir: "build/modules"
+  sourceDir: 'src',
+  outputDir: 'build/modules'
 };
 
 
 var test = {
   rootIDs: rootIDs.concat([
-    "test/all.js",
-    "**/__tests__/*.js"
+    'test/all.js',
+    '**/__tests__/*.js'
   ]),
   getConfig: function() {
     return _.merge({}, normal.getConfig(), {
       mocking: true
     });
   },
-  sourceDir: "src",
-  outputDir: "build/modules"
+  sourceDir: 'src',
+  outputDir: 'build/modules'
 };
 
 

@@ -1,37 +1,22 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule DOMChildrenOperations
  * @typechecks static-only
  */
 
-"use strict";
+'use strict';
 
 var Danger = require('Danger');
 var ReactMultiChildUpdateTypes = require('ReactMultiChildUpdateTypes');
 
-var getTextContentAccessor = require('getTextContentAccessor');
+var setTextContent = require('setTextContent');
 var invariant = require('invariant');
-
-/**
- * The DOM property to use when setting text content.
- *
- * @type {string}
- * @private
- */
-var textContentAccessor = getTextContentAccessor();
 
 /**
  * Inserts `childNode` as a child of `parentNode` at the `index`.
@@ -52,37 +37,6 @@ function insertChildAt(parentNode, childNode, index) {
   );
 }
 
-var updateTextContent;
-if (textContentAccessor === 'textContent') {
-  /**
-   * Sets the text content of `node` to `text`.
-   *
-   * @param {DOMElement} node Node to change
-   * @param {string} text New text content
-   */
-  updateTextContent = function(node, text) {
-    node.textContent = text;
-  };
-} else {
-  /**
-   * Sets the text content of `node` to `text`.
-   *
-   * @param {DOMElement} node Node to change
-   * @param {string} text New text content
-   */
-  updateTextContent = function(node, text) {
-    // In order to preserve newlines correctly, we can't use .innerText to set
-    // the contents (see #1080), so we empty the element then append a text node
-    while (node.firstChild) {
-      node.removeChild(node.firstChild);
-    }
-    if (text) {
-      var doc = node.ownerDocument || document;
-      node.appendChild(doc.createTextNode(text));
-    }
-  };
-}
-
 /**
  * Operations for updating with DOM children.
  */
@@ -90,7 +44,7 @@ var DOMChildrenOperations = {
 
   dangerouslyReplaceNodeWithMarkup: Danger.dangerouslyReplaceNodeWithMarkup,
 
-  updateTextContent: updateTextContent,
+  updateTextContent: setTextContent,
 
   /**
    * Updates a component's children by processing a series of updates. The
@@ -107,7 +61,8 @@ var DOMChildrenOperations = {
     // List of children that will be moved or removed.
     var updatedChildren = null;
 
-    for (var i = 0; update = updates[i]; i++) {
+    for (var i = 0; i < updates.length; i++) {
+      update = updates[i];
       if (update.type === ReactMultiChildUpdateTypes.MOVE_EXISTING ||
           update.type === ReactMultiChildUpdateTypes.REMOVE_NODE) {
         var updatedIndex = update.fromIndex;
@@ -119,7 +74,7 @@ var DOMChildrenOperations = {
           'processUpdates(): Unable to find child %s of element. This ' +
           'probably means the DOM was unexpectedly mutated (e.g., by the ' +
           'browser), usually due to forgetting a <tbody> when using tables, ' +
-          'nesting tags like <form>, <p>, or <a>, or using non-SVG elements '+
+          'nesting tags like <form>, <p>, or <a>, or using non-SVG elements ' +
           'in an <svg> parent. Try inspecting the child nodes of the element ' +
           'with React ID `%s`.',
           updatedIndex,
@@ -144,7 +99,8 @@ var DOMChildrenOperations = {
       }
     }
 
-    for (var k = 0; update = updates[k]; k++) {
+    for (var k = 0; k < updates.length; k++) {
+      update = updates[k];
       switch (update.type) {
         case ReactMultiChildUpdateTypes.INSERT_MARKUP:
           insertChildAt(
@@ -161,7 +117,7 @@ var DOMChildrenOperations = {
           );
           break;
         case ReactMultiChildUpdateTypes.TEXT_CONTENT:
-          updateTextContent(
+          setTextContent(
             update.parentNode,
             update.textContent
           );

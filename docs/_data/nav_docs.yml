@@ -8,6 +8,8 @@
     title: Thinking in React
 - title: Community Resources
   items:
+  - id: conferences
+    title: Conferences
   - id: videos
     title: Videos
   - id: complementary-tools
@@ -23,6 +25,8 @@
     subitems:
     - id: jsx-in-depth
       title: JSX in Depth
+    - id: jsx-spread
+      title: JSX Spread Attributes
     - id: jsx-gotchas
       title: JSX Gotchas
   - id: interactivity-and-dynamic-uis
@@ -31,6 +35,8 @@
     title: Multiple Components
   - id: reusable-components
     title: Reusable Components
+  - id: transferring-props
+    title: Transferring Props
   - id: forms
     title: Forms
   - id: working-with-the-browser
@@ -59,6 +65,8 @@
       title: PureRenderMixin
     - id: perf
       title: Performance Tools
+  - id: advanced-performance
+    title: Advanced Performance
 - title: Reference
   items:
   - id: top-level-api
@@ -77,9 +85,13 @@
     title: Special Non-DOM Attributes
   - id: reconciliation
     title: Reconciliation
+  - id: glossary
+    title: React (Virtual) DOM Terminology
 - title: Flux
   items:
   - id: flux-overview
     title: Flux Overview
+    href: http://facebook.github.io/flux/docs/overview.html
   - id: flux-todo-list
     title: Flux TodoMVC Tutorial
+    href: http://facebook.github.io/flux/docs/todo-list.html

@@ -1,23 +1,16 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule ReactDefaultPerf
  * @typechecks static-only
  */
 
-"use strict";
+'use strict';
 
 var DOMProperty = require('DOMProperty');
 var ReactDefaultPerfAnalysis = require('ReactDefaultPerfAnalysis');
@@ -90,19 +83,23 @@ var ReactDefaultPerf = {
     );
   },
 
-  printWasted: function(measurements) {
-    measurements = measurements || ReactDefaultPerf._allMeasurements;
+  getMeasurementsSummaryMap: function(measurements) {
     var summary = ReactDefaultPerfAnalysis.getInclusiveSummary(
       measurements,
       true
     );
-    console.table(summary.map(function(item) {
+    return summary.map(function(item) {
       return {
         'Owner > component': item.componentName,
         'Wasted time (ms)': item.time,
         'Instances': item.count
       };
-    }));
+    });
+  },
+
+  printWasted: function(measurements) {
+    measurements = measurements || ReactDefaultPerf._allMeasurements;
+    console.table(ReactDefaultPerf.getMeasurementsSummaryMap(measurements));
     console.log(
       'Total time:',
       ReactDefaultPerfAnalysis.getTotalTime(measurements).toFixed(2) + ' ms'
@@ -172,7 +169,7 @@ var ReactDefaultPerf = {
         rv = func.apply(this, args);
         totalTime = performanceNow() - start;
 
-        if (fnName === 'mountImageIntoNode') {
+        if (fnName === '_mountImageIntoNode') {
           var mountID = ReactMount.getID(args[1]);
           ReactDefaultPerf._recordWrite(mountID, fnName, totalTime, args[0]);
         } else if (fnName === 'dangerouslyProcessChildrenUpdates') {
@@ -245,9 +242,18 @@ var ReactDefaultPerf = {
           addValue(entry.inclusive, rootNodeID, totalTime);
         }
 
+        var displayName = null;
+        if (this._instance.constructor.displayName) {
+          displayName = this._instance.constructor.displayName;
+        } else if (this._currentElement.type) {
+          displayName = this._currentElement.type;
+        }
+
         entry.displayNames[rootNodeID] = {
-          current: this.constructor.displayName,
-          owner: this._owner ? this._owner.constructor.displayName : '<root>'
+          current: displayName,
+          owner: this._currentElement._owner ?
+            this._currentElement._owner._instance.constructor.displayName :
+            '<root>'
         };
 
         return rv;

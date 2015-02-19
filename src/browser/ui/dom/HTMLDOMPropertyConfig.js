@@ -1,24 +1,17 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule HTMLDOMPropertyConfig
  */
 
 /*jslint bitwise: true*/
 
-"use strict";
+'use strict';
 
 var DOMProperty = require('DOMProperty');
 var ExecutionEnvironment = require('ExecutionEnvironment');
@@ -56,6 +49,7 @@ var HTMLDOMPropertyConfig = {
      * Standard Properties
      */
     accept: null,
+    acceptCharset: null,
     accessKey: null,
     action: null,
     allowFullScreen: MUST_USE_ATTRIBUTE | HAS_BOOLEAN_VALUE,
@@ -94,8 +88,13 @@ var HTMLDOMPropertyConfig = {
     draggable: null,
     encType: null,
     form: MUST_USE_ATTRIBUTE,
+    formAction: MUST_USE_ATTRIBUTE,
+    formEncType: MUST_USE_ATTRIBUTE,
+    formMethod: MUST_USE_ATTRIBUTE,
     formNoValidate: HAS_BOOLEAN_VALUE,
+    formTarget: MUST_USE_ATTRIBUTE,
     frameBorder: MUST_USE_ATTRIBUTE,
+    headers: null,
     height: MUST_USE_ATTRIBUTE,
     hidden: MUST_USE_ATTRIBUTE | HAS_BOOLEAN_VALUE,
     href: null,
@@ -106,8 +105,11 @@ var HTMLDOMPropertyConfig = {
     id: MUST_USE_PROPERTY,
     label: null,
     lang: null,
-    list: null,
+    list: MUST_USE_ATTRIBUTE,
     loop: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
+    manifest: MUST_USE_ATTRIBUTE,
+    marginHeight: null,
+    marginWidth: null,
     max: null,
     maxLength: MUST_USE_ATTRIBUTE,
     media: MUST_USE_ATTRIBUTE,
@@ -118,7 +120,7 @@ var HTMLDOMPropertyConfig = {
     muted: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
     name: null,
     noValidate: HAS_BOOLEAN_VALUE,
-    open: null,
+    open: HAS_BOOLEAN_VALUE,
     pattern: null,
     placeholder: null,
     poster: null,
@@ -132,9 +134,7 @@ var HTMLDOMPropertyConfig = {
     rowSpan: null,
     sandbox: null,
     scope: null,
-    scrollLeft: MUST_USE_PROPERTY,
     scrolling: null,
-    scrollTop: MUST_USE_PROPERTY,
     seamless: MUST_USE_ATTRIBUTE | HAS_BOOLEAN_VALUE,
     selected: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
     shape: null,
@@ -160,15 +160,25 @@ var HTMLDOMPropertyConfig = {
     /**
      * Non-standard Properties
      */
-    autoCapitalize: null, // Supported in Mobile Safari for keyboard hints
-    autoCorrect: null, // Supported in Mobile Safari for keyboard hints
-    itemProp: MUST_USE_ATTRIBUTE, // Microdata: http://schema.org/docs/gs.html
-    itemScope: MUST_USE_ATTRIBUTE | HAS_BOOLEAN_VALUE, // Microdata: http://schema.org/docs/gs.html
-    itemType: MUST_USE_ATTRIBUTE, // Microdata: http://schema.org/docs/gs.html
-    property: null // Supports OG in meta tags
+    // autoCapitalize and autoCorrect are supported in Mobile Safari for
+    // keyboard hints.
+    autoCapitalize: null,
+    autoCorrect: null,
+    // itemProp, itemScope, itemType are for
+    // Microdata support. See http://schema.org/docs/gs.html
+    itemProp: MUST_USE_ATTRIBUTE,
+    itemScope: MUST_USE_ATTRIBUTE | HAS_BOOLEAN_VALUE,
+    itemType: MUST_USE_ATTRIBUTE,
+    // itemID and itemRef are for Microdata support as well but
+    // only specified in the the WHATWG spec document. See
+    // https://html.spec.whatwg.org/multipage/microdata.html#microdata-dom-api
+    itemID: MUST_USE_ATTRIBUTE,
+    itemRef: MUST_USE_ATTRIBUTE,
+    // property is supported for OpenGraph in meta tags.
+    property: null
   },
   DOMAttributeNames: {
-    classID: 'classid',
+    acceptCharset: 'accept-charset',
     className: 'class',
     htmlFor: 'for',
     httpEquiv: 'http-equiv'
@@ -179,7 +189,9 @@ var HTMLDOMPropertyConfig = {
     autoCorrect: 'autocorrect',
     autoFocus: 'autofocus',
     autoPlay: 'autoplay',
-    encType: 'enctype',
+    // `encoding` is equivalent to `enctype`, IE8 lacks an `enctype` setter.
+    // http://www.w3.org/TR/html5/forms.html#dom-fs-encoding
+    encType: 'encoding',
     hrefLang: 'hreflang',
     radioGroup: 'radiogroup',
     spellCheck: 'spellcheck',

@@ -1,108 +1,130 @@
 /**
- * Copyright 2013-2014 Facebook, Inc.
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule instantiateReactComponent
  * @typechecks static-only
  */
 
-"use strict";
+'use strict';
 
+var ReactCompositeComponent = require('ReactCompositeComponent');
+var ReactEmptyComponent = require('ReactEmptyComponent');
+var ReactNativeComponent = require('ReactNativeComponent');
+
+var assign = require('Object.assign');
+var invariant = require('invariant');
 var warning = require('warning');
 
-var ReactDescriptor = require('ReactDescriptor');
-var ReactLegacyDescriptor = require('ReactLegacyDescriptor');
-var ReactEmptyComponent = require('ReactEmptyComponent');
+// To avoid a cyclic dependency, we create the final class in this module
+var ReactCompositeComponentWrapper = function() { };
+assign(
+  ReactCompositeComponentWrapper.prototype,
+  ReactCompositeComponent.Mixin,
+  {
+    _instantiateReactComponent: instantiateReactComponent
+  }
+);
 
 /**
- * Given a `componentDescriptor` create an instance that will actually be
- * mounted.
+ * Check if the type reference is a known internal type. I.e. not a user
+ * provided composite type.
  *
- * @param {object} descriptor
- * @return {object} A new instance of componentDescriptor's constructor.
+ * @param {function} type
+ * @return {boolean} Returns true if this is a valid internal type.
+ */
+function isInternalComponentType(type) {
+  return (
+    typeof type === 'function' &&
+    typeof type.prototype.mountComponent === 'function' &&
+    typeof type.prototype.receiveComponent === 'function'
+  );
+}
+
+/**
+ * Given a ReactNode, create an instance that will actually be mounted.
+ *
+ * @param {ReactNode} node
+ * @param {*} parentCompositeType The composite type that resolved this.
+ * @return {object} A new instance of the element's constructor.
  * @protected
  */
-function instantiateReactComponent(descriptor) {
+function instantiateReactComponent(node, parentCompositeType) {
   var instance;
 
-  if (__DEV__) {
-    warning(
-      descriptor && (typeof descriptor.type === 'function' ||
-                     typeof descriptor.type === 'string'),
-      'Only functions or strings can be mounted as React components.'
-      // Not really strings yet, but as soon as I solve the cyclic dep, they
-      // will be allowed here.
-    );
-
-    // Resolve mock instances
-    if (descriptor.type._mockedReactClassConstructor) {
-      // If this is a mocked class, we treat the legacy factory as if it was the
-      // class constructor for future proofing unit tests. Because this might
-      // be mocked as a legacy factory, we ignore any warnings triggerd by
-      // this temporary hack.
-      ReactLegacyDescriptor._isLegacyCallWarningEnabled = false;
-      try {
-        instance = new descriptor.type._mockedReactClassConstructor(
-          descriptor.props
-        );
-      } finally {
-        ReactLegacyDescriptor._isLegacyCallWarningEnabled = true;
-      }
-
-      // If the mock implementation was a legacy factory, then it returns a
-      // descriptor. We need to turn this into a real component instance.
-      if (ReactDescriptor.isValidDescriptor(instance)) {
-        instance = new instance.type(instance.props);
-      }
-
-      var render = instance.render;
-      if (!render) {
-        // For auto-mocked factories, the prototype isn't shimmed and therefore
-        // there is no render function on the instance. We replace the whole
-        // component with an empty component instance instead.
-        descriptor = ReactEmptyComponent.getEmptyComponent();
-        instance = new descriptor.type(descriptor.props);
-        instance.construct(descriptor);
-        return instance;
-      } else if (render._isMockFunction && !render._getMockImplementation()) {
-        // Auto-mocked components may have a prototype with a mocked render
-        // function. For those, we'll need to mock the result of the render
-        // since we consider undefined to be invalid results from render.
-        render.mockImplementation(
-          ReactEmptyComponent.getEmptyComponent
-        );
-      }
-      instance.construct(descriptor);
-      return instance;
-    }
+  if (node === null || node === false) {
+    node = ReactEmptyComponent.emptyElement;
   }
 
-  // Normal case for non-mocks
-  instance = new descriptor.type(descriptor.props);
+  if (typeof node === 'object') {
+    var element = node;
+    if (__DEV__) {
+      warning(
+        element && (typeof element.type === 'function' ||
+                    typeof element.type === 'string'),
+        'Only functions or strings can be mounted as React components.'
+      );
+    }
+
+    // Special case string values
+    if (parentCompositeType === element.type &&
+        typeof element.type === 'string') {
+      // Avoid recursion if the wrapper renders itself.
+      instance = ReactNativeComponent.createInternalComponent(element);
+      // All native components are currently wrapped in a composite so we're
+      // safe to assume that this is what we should instantiate.
+    } else if (isInternalComponentType(element.type)) {
+      // This is temporarily available for custom components that are not string
+      // represenations. I.e. ART. Once those are updated to use the string
+      // representation, we can drop this code path.
+      instance = new element.type(element);
+    } else {
+      instance = new ReactCompositeComponentWrapper();
+    }
+  } else if (typeof node === 'string' || typeof node === 'number') {
+    instance = ReactNativeComponent.createInstanceForText(node);
+  } else {
+    invariant(
+      false,
+      'Encountered invalid React node of type %s',
+      typeof node
+    );
+  }
 
   if (__DEV__) {
     warning(
       typeof instance.construct === 'function' &&
       typeof instance.mountComponent === 'function' &&
-      typeof instance.receiveComponent === 'function',
+      typeof instance.receiveComponent === 'function' &&
+      typeof instance.unmountComponent === 'function',
       'Only React Components can be mounted.'
     );
   }
 
-  // This actually sets up the internal instance. This will become decoupled
-  // from the public instance in a future diff.
-  instance.construct(descriptor);
+  // Sets up the instance. This can probably just move into the constructor now.
+  instance.construct(node);
+
+  // These two fields are used by the DOM and ART diffing algorithms
+  // respectively. Instead of using expandos on components, we should be
+  // storing the state needed by the diffing algorithms elsewhere.
+  instance._mountIndex = 0;
+  instance._mountImage = null;
+
+  if (__DEV__) {
+    instance._isOwnerNecessary = false;
+  }
+
+  // Internal instances should fully constructed at this point, so they should
+  // not get any new fields added to them at this point.
+  if (__DEV__) {
+    if (Object.preventExtensions) {
+      Object.preventExtensions(instance);
+    }
+  }
 
   return instance;
 }
